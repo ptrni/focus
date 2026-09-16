@@ -39,27 +39,31 @@ Do not use `localhost`, a placeholder domain, or the frontend domain as the back
 
 ## Backend (Deploy Separately - Not on Vercel)
 
-AdonisJS cannot run on Vercel. Deploy to **Railway**, **Render**, **Fly.io**, or **Neon + Railway**.
+This repository's Vercel configuration deploys only the frontend. Deploy the existing AdonisJS server and PostgreSQL separately; the configuration below uses Railway.
 
 ### Option A: Railway (Easiest)
 1. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
-2. Select `focus` repo, set **Root Directory** to `backend`
-3. Add PostgreSQL database (Railway provides one-click)
+2. Select `ptrni/focus`, set **Root Directory** to `/backend`, and set the Railway config file path to `/backend/railway.json`. This file defines build, migrations, startup, and health checks. Use Node.js 24 (also specified in `.nvmrc`).
+3. Add a PostgreSQL service named `Postgres` in the same project/environment.
 4. Set Environment Variables:
    ```
    NODE_ENV=production
    HOST=0.0.0.0
    PORT=3333
    APP_KEY=<run: node ace generate:key>
-   FRONTEND_ORIGIN=https://your-vercel-app.vercel.app
-   PG_HOST=<railway-postgres-host>
-   PG_PORT=5432
-   PG_USER=<railway-postgres-user>
-   PG_PASSWORD=<railway-postgres-password>
-   PG_DB_NAME=<railway-postgres-db>
+   FRONTEND_ORIGIN=https://focus-sepia-beta.vercel.app
+   PG_HOST=${{Postgres.PGHOST}}
+   PG_PORT=${{Postgres.PGPORT}}
+   PG_USER=${{Postgres.PGUSER}}
+   PG_PASSWORD=${{Postgres.PGPASSWORD}}
+   PG_DB_NAME=${{Postgres.PGDATABASE}}
    ```
-5. Deploy → Copy the generated domain (e.g., `https://focus-backend.railway.app`)
-6. Update Vercel frontend `VITE_API_URL` to `https://focus-backend.railway.app/api`
+   Generate `APP_KEY` once and keep it stable in Railway's environment variables. Do not commit it. If your database service has a different name, update the `Postgres` references accordingly.
+5. Deploy, then generate a public domain under Networking with target port `3333`. The pre-deploy step runs migrations; if it fails, inspect its logs before proceeding.
+6. Verify `https://<generated-domain>/api/health` returns `{"status":"ok"}` and `/api/workspaces` returns JSON successfully.
+7. Set Vercel frontend `VITE_API_URL` to `https://<generated-domain>/api` and redeploy the frontend. Test creating a workspace and task, then reload to verify persistence.
+
+References: [Railway config](https://docs.railway.com/config-as-code/reference), [monorepo configuration](https://docs.railway.com/deployments/monorepo), [AdonisJS deployment](https://docs.adonisjs.com/deployment).
 
 ### Option B: Render
 Similar to Railway but uses `render.yaml` for config.
