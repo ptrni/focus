@@ -14,7 +14,7 @@ git push -u origin main
 
 ### 2. Deploy Frontend on Vercel
 1. Go to [vercel.com](https://vercel.com) and import the repository
-2. Set **Root Directory** to `frontend`
+2. Set **Root Directory** to `frontend`. Deploying from the repository root is also supported: the root `vercel.json` installs and builds `frontend` and serves `frontend/dist`.
 3. Build settings are auto-detected from `vercel.json`
 4. Add Environment Variable:
    - `VITE_API_URL` = `https://your-backend-domain.railway.app/api` (or wherever you deploy backend)
