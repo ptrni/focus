@@ -33,7 +33,7 @@
     "node": ">=24.0.0"
   },
   "imports": {
-    "#controllers/*": "./app/Controllers/Http/*.js",
+    "#controllers/*": "./app/Controllers/*.js",
     "#models/*": "./app/Models/*.js",
     "#start/*": "./start/*.js",
     "#middleware/*": "./app/middleware/*.js",

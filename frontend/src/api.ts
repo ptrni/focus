@@ -1,6 +1,6 @@
 export interface Workspace { id: number; name: string; createdAt: string; updatedAt: string }
 export interface Todo { id: number; workspaceId: number; title: string; completed: boolean; createdAt: string; updatedAt: string }
-const base = (import.meta.env.VITE_API_URL || 'http://localhost:3333/api').replace(/\/$/, '')
+const base = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3333/api' : '/api')).replace(/\/$/, '')
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   let response: Response
   try { response = await fetch(`${base}${path}`, { ...options, headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers }, signal: AbortSignal.timeout(15000) }) }

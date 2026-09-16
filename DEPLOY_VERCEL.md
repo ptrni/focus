@@ -1,94 +1,74 @@
-# Vercel Deployment Guide
+# Frontend and backend on Vercel
 
-## Frontend (Deploy to Vercel)
+The repository root builds React/Vite at `/` and AdonisJS 7 as a Node.js 24 Vercel Function at `/api/*`. The frontend calls `/api` on the same domain. PostgreSQL must still be provisioned separately (for example, Neon through Vercel Storage/Marketplace).
 
-### 1. Push to GitHub
-```bash
-cd focus
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/YOUR_USERNAME/focus.git
-git push -u origin main
+## Vercel settings
+
+For `ptrni/focus` and project `prj_XFIyatzwiJIb5wzlnTFiZkKokYDP`:
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | Repository root; clear `frontend` if currently set |
+| Framework Preset | Other |
+| Node.js | 24.x |
+| Install Command | Use root `vercel.json` |
+| Build Command | `npm run build` |
+| Output Directory | Disable old `dist` or `frontend/dist` override; use Build Output API detection |
+
+The build generates `.vercel/output/static` and `.vercel/output/functions/api/index.func`. Production dependencies are installed inside the function. Source `.env` files are not copied. The combined build sets the frontend API to `/api`, so `VITE_API_URL` is not required.
+
+## Database and environment variables
+
+Connect a hosted PostgreSQL database, reviewing the provider's plan before provisioning. Set these variables in Vercel Production:
+
+- `DATABASE_URL`: provider PostgreSQL connection string, including its TLS options; use a pooled connection URL for runtime if available.
+- `APP_KEY`: a persistent secret generated with `node ace generate:key` in `backend` after dependency installation.
+- `FRONTEND_ORIGIN`: `https://focus-sepia-beta.vercel.app` (no trailing slash).
+
+The function sets `NODE_ENV=production` and does not open a listening port. Never put database credentials or APP_KEY in GitHub, chat, or frontend `VITE_*` variables. Use a separate database for previews.
+
+## Run migrations before deployment
+
+Migrations are explicit, not run during requests or frontend builds. With Node.js 24:
+
+```sh
+cd backend
+npm ci --include=dev
+cp .env.example .env
+# Edit .env with DATABASE_URL, APP_KEY, and FRONTEND_ORIGIN.
+# Use the provider's direct/unpooled database URL for migrations if supplied.
+node ace migration:run --force
 ```
 
-### 2. Deploy Frontend on Vercel
-1. Go to [vercel.com](https://vercel.com) and import the repository
-2. Set **Root Directory** to `frontend`. Deploying from the repository root is also supported: the root `vercel.json` installs and builds `frontend` and serves `frontend/dist`.
-3. Build settings are auto-detected from `vercel.json`
-4. Add Environment Variable:
-   - `VITE_API_URL` = `https://your-backend-domain.railway.app/api` (or wherever you deploy backend)
-5. Deploy
+Keep `.env` local and ignored. Run migrations against the intended database before first deployment and whenever the schema changes. Then redeploy the latest commit after saving Vercel settings and environment variables.
 
-### 3. After Deploy
-- Copy your Vercel URL (e.g., `https://focus-todo.vercel.app`)
-- Update backend `FRONTEND_ORIGIN` to this URL
+## Verify
 
-### Fix "Cannot reach the server"
+1. `/api/health` should return `{"status":"ok"}`. This verifies application startup, not database connectivity.
+2. `/api/workspaces` should return JSON with a `data` array, confirming database connectivity and migrations.
+3. Create/edit/complete a task in the frontend, reload, and verify persistence.
+4. Import `postman/Focus-Todo.postman_collection.json`, set `baseUrl` to `https://focus-sepia-beta.vercel.app/api`, and run against a test database. The collection creates/deletes test records.
 
-The frontend needs a running backend and PostgreSQL database. Deploying this repository's frontend on Vercel does not start the backend.
+If API routes return HTML/404, check Root Directory and deployment output. For 500 errors inspect function logs, environment variables, and migrations.
 
-1. Confirm your deployed backend's `/api/health` endpoint returns JSON with `status: "ok"`, and `/api/workspaces` responds successfully after database migrations.
-2. In Vercel project environment variables, set `VITE_API_URL` to that backend's HTTPS URL ending in `/api`. Apply it to Production (and Preview if needed).
-3. Set the backend's `FRONTEND_ORIGIN` to `https://focus-sepia-beta.vercel.app` without a trailing slash, then restart/redeploy the backend so CORS allows the frontend.
-4. Redeploy the frontend. Vite embeds `VITE_API_URL` at build time; changing the environment variable alone does not update existing deployments.
+## Local verification
 
-Do not use `localhost`, a placeholder domain, or the frontend domain as the backend URL. Vercel builds now reject missing, non-HTTPS, or loopback API URLs; local development still supports `http://localhost:3333/api`.
-
----
-
-## Backend (Deploy Separately - Not on Vercel)
-
-This repository's Vercel configuration deploys only the frontend. Deploy the existing AdonisJS server and PostgreSQL separately; the configuration below uses Railway.
-
-### Option A: Railway (Easiest)
-1. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
-2. Select `ptrni/focus`, set **Root Directory** to `/backend`, and set the Railway config file path to `/backend/railway.json`. This file defines build, migrations, startup, and health checks. Use Node.js 24 (also specified in `.nvmrc`).
-3. Add a PostgreSQL service named `Postgres` in the same project/environment.
-4. Set Environment Variables:
-   ```
-   NODE_ENV=production
-   HOST=0.0.0.0
-   PORT=3333
-   APP_KEY=<run: node ace generate:key>
-   FRONTEND_ORIGIN=https://focus-sepia-beta.vercel.app
-   PG_HOST=${{Postgres.PGHOST}}
-   PG_PORT=${{Postgres.PGPORT}}
-   PG_USER=${{Postgres.PGUSER}}
-   PG_PASSWORD=${{Postgres.PGPASSWORD}}
-   PG_DB_NAME=${{Postgres.PGDATABASE}}
-   ```
-   Generate `APP_KEY` once and keep it stable in Railway's environment variables. Do not commit it. If your database service has a different name, update the `Postgres` references accordingly.
-5. Deploy, then generate a public domain under Networking with target port `3333`. The pre-deploy step runs migrations; if it fails, inspect its logs before proceeding.
-6. Verify `https://<generated-domain>/api/health` returns `{"status":"ok"}` and `/api/workspaces` returns JSON successfully.
-7. Set Vercel frontend `VITE_API_URL` to `https://<generated-domain>/api` and redeploy the frontend. Test creating a workspace and task, then reload to verify persistence.
-
-References: [Railway config](https://docs.railway.com/config-as-code/reference), [monorepo configuration](https://docs.railway.com/deployments/monorepo), [AdonisJS deployment](https://docs.adonisjs.com/deployment).
-
-### Option B: Render
-Similar to Railway but uses `render.yaml` for config.
-
-### Database Options
-- **Railway/Render/Neon/Supabase** - Managed PostgreSQL
-- Update `PG_*` env vars accordingly
-
----
-
-## Local Development with Production Backend
-```bash
-cd frontend
-echo "VITE_API_URL=https://your-backend.railway.app/api" > .env.local
-npm run dev
+```sh
+# From repository root, Node.js 24
+npm ci --prefix backend --include=dev
+npm ci --prefix frontend --include=dev
+npm run build
+npm run test:vercel
 ```
 
----
+Adapter tests exercise the packaged handler, concurrent startup, CORS, request validation, routing, and production frontend assets without PostgreSQL. Existing backend API tests require a running API with a migrated test database for CRUD/persistence checks.
 
-## Commands Reference
+## Optional separate Vercel projects
 
-| Task | Command |
-|------|---------|
-| Build frontend | `cd frontend && npm run build` |
-| Preview build | `cd frontend && npm run preview` |
-| Build backend | `cd backend && npm run build` |
-| Generate APP_KEY | `cd backend && node ace generate:key` |
-| Run migrations | `cd backend && node ace migration:run` |
+Backend: set Root Directory to `backend`; `backend/vercel.json` builds an API-only deployment. Configure the same environment variables and run migrations.
+
+Frontend: set Root Directory to `frontend` and `VITE_API_URL` to `https://<backend-domain>/api`, then rebuild. The backend's `FRONTEND_ORIGIN` must match the frontend origin.
+
+Railway remains an alternative via `backend/railway.json`, but is not needed for the combined Vercel deployment.
+
+References: [Vercel Build Output API](https://vercel.com/docs/build-output-api/primitives), [AdonisJS production builds](https://docs.adonisjs.com/deployment), [Vercel storage](https://vercel.com/docs/storage).

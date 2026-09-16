@@ -3,7 +3,8 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
-  if (command === 'build' && process.env.VERCEL === '1') {
+  const sameOriginApi = process.env.FOCUS_FULLSTACK === '1' && env.VITE_API_URL === '/api'
+  if (command === 'build' && process.env.VERCEL === '1' && !sameOriginApi) {
     let apiUrl: URL
     try {
       apiUrl = new URL(env.VITE_API_URL || '')

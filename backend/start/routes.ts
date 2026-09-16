@@ -1,6 +1,6 @@
 import Route from '@adonisjs/core/services/router'
-const TodosController = () => import('#controllers/TodosController')
-const WorkspacesController = () => import('#controllers/WorkspacesController')
+const TodosController = () => import('#controllers/Http/TodosController')
+const WorkspacesController = () => import('#controllers/Http/WorkspacesController')
 Route.get('/api/health', async () => ({ status: 'ok' }))
 Route.group(() => {
   Route.get('/workspaces', [WorkspacesController, 'index'])
