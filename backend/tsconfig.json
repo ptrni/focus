@@ -1,0 +1,12 @@
+{
+  "extends": "@adonisjs/tsconfig/tsconfig.app.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "build",
+    "strictPropertyInitialization": false
+  },
+  "exclude": [
+    "node_modules",
+    "build"
+  ]
+}

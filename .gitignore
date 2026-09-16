@@ -1,0 +1,11 @@
+node_modules/
+build/
+dist/
+.env
+.env.local
+*.tsbuildinfo
+*.log
+test-results/
+playwright-report/
+
+.adonisjs/

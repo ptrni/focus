@@ -1,0 +1,42 @@
+{
+  "name": "focus-todo-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node ace serve --watch",
+    "build": "node ace build",
+    "start": "node build/bin/server.js",
+    "typecheck": "tsc --noEmit",
+    "migration:run": "node ace migration:run",
+    "test": "node --test tests/api.test.mjs"
+  },
+  "dependencies": {
+    "@adonisjs/core": "^7.5.0",
+    "@adonisjs/lucid": "^22.4.2",
+    "@adonisjs/cors": "^3.0.0",
+    "luxon": "^3.7.0",
+    "pg": "^8.16.0",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@adonisjs/assembler": "^8.5.1",
+    "@adonisjs/tsconfig": "^2.0.0",
+    "@poppinss/ts-exec": "^1.4.4",
+    "@types/luxon": "^3.7.0",
+    "@types/node": "^24.0.0",
+    "typescript": "~5.9.3",
+    "youch": "^4.1.0",
+    "pino-pretty": "^13.1.0"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "imports": {
+    "#controllers/*": "./app/Controllers/Http/*.js",
+    "#models/*": "./app/Models/*.js",
+    "#start/*": "./start/*.js",
+    "#middleware/*": "./app/middleware/*.js",
+    "#generated/*": "./.adonisjs/server/*.js"
+  }
+}

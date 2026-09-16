@@ -1,0 +1,16 @@
+import Route from '@adonisjs/core/services/router'
+const TodosController = () => import('#controllers/TodosController')
+const WorkspacesController = () => import('#controllers/WorkspacesController')
+Route.get('/api/health', async () => ({ status: 'ok' }))
+Route.group(() => {
+  Route.get('/workspaces', [WorkspacesController, 'index'])
+  Route.post('/workspaces', [WorkspacesController, 'store'])
+  Route.get('/workspaces/:id', [WorkspacesController, 'show'])
+  Route.patch('/workspaces/:id', [WorkspacesController, 'update'])
+  Route.delete('/workspaces/:id', [WorkspacesController, 'destroy'])
+  Route.get('/todos', [TodosController, 'index'])
+  Route.post('/todos', [TodosController, 'store'])
+  Route.get('/todos/:id', [TodosController, 'show'])
+  Route.patch('/todos/:id', [TodosController, 'update'])
+  Route.delete('/todos/:id', [TodosController, 'destroy'])
+}).prefix('/api')
