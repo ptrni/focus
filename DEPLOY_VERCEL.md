@@ -24,6 +24,17 @@ git push -u origin main
 - Copy your Vercel URL (e.g., `https://focus-todo.vercel.app`)
 - Update backend `FRONTEND_ORIGIN` to this URL
 
+### Fix "Cannot reach the server"
+
+The frontend needs a running backend and PostgreSQL database. Deploying this repository's frontend on Vercel does not start the backend.
+
+1. Confirm your deployed backend's `/api/health` endpoint returns JSON with `status: "ok"`, and `/api/workspaces` responds successfully after database migrations.
+2. In Vercel project environment variables, set `VITE_API_URL` to that backend's HTTPS URL ending in `/api`. Apply it to Production (and Preview if needed).
+3. Set the backend's `FRONTEND_ORIGIN` to `https://focus-sepia-beta.vercel.app` without a trailing slash, then restart/redeploy the backend so CORS allows the frontend.
+4. Redeploy the frontend. Vite embeds `VITE_API_URL` at build time; changing the environment variable alone does not update existing deployments.
+
+Do not use `localhost`, a placeholder domain, or the frontend domain as the backend URL. Vercel builds now reject missing, non-HTTPS, or loopback API URLs; local development still supports `http://localhost:3333/api`.
+
 ---
 
 ## Backend (Deploy Separately - Not on Vercel)
